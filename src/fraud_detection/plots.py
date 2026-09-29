@@ -12,6 +12,7 @@ from sklearn.metrics import precision_recall_curve
 
 # Colorblind-safe categorical palette, assigned in fixed order.
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4"]
+LINESTYLES = ["-", (0, (6, 2)), (0, (2, 2)), (0, (6, 2, 2, 2)), (0, (1, 1))]
 LEGIT_COLOR, FRAUD_COLOR = SERIES[0], SERIES[1]
 TEXT = "#0b0b0b"
 TEXT_MUTED = "#52514e"
@@ -108,20 +109,21 @@ def fraud_rate_by_hour(df: pd.DataFrame, path=None) -> plt.Figure:
 def precision_recall_curves(y_true, probas: dict[str, np.ndarray], baseline=None, path=None) -> plt.Figure:
     """PR curve per model; ``baseline`` is an optional (recall, precision, label) point."""
     fig, ax = plt.subplots(figsize=(6.5, 5))
-    for color, (name, proba) in zip(SERIES, probas.items()):
+    # Distinct dash patterns keep curves that lie on top of each other distinguishable.
+    for color, dashes, (name, proba) in zip(SERIES, LINESTYLES, probas.items()):
         precision, recall, _ = precision_recall_curve(y_true, proba)
-        ax.plot(recall, precision, color=color, label=name)
+        ax.plot(recall, precision, color=color, linestyle=dashes, label=name)
     if baseline is not None:
         recall, precision, label = baseline
         ax.scatter([recall], [precision], s=60, color=TEXT_MUTED, zorder=3, edgecolor=SURFACE, linewidth=2)
         ax.annotate(
             label,
             (recall, precision),
-            xytext=(8, 0),
+            xytext=(6, -8),
             textcoords="offset points",
             color=TEXT_MUTED,
             fontsize=9,
-            va="center",
+            va="top",
         )
     ax.set_title("Precision-recall on the test set")
     ax.set_xlabel("Recall (share of fraud caught)")
@@ -160,7 +162,7 @@ def feature_importance(importances: pd.Series, title: str, path=None) -> plt.Fig
     fig, ax = plt.subplots(figsize=(7, 4))
     ax.barh(importances.index, importances.values, color=LEGIT_COLOR, height=0.6)
     ax.set_title(title)
-    ax.set_xlabel("Share of total importance")
+    ax.set_xlabel("Share of total importance (gain)")
     ax.grid(axis="y", visible=False)
     save(fig, path)
     return fig
