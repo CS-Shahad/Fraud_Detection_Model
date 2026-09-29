@@ -1,0 +1,11 @@
+# Install the project and its dependencies with:  pip install -e .
+# This file pins the versions the results were produced with.
+pandas==3.0.6
+numpy>=1.24
+scikit-learn==1.9.1
+xgboost==3.2.0
+lightgbm==4.7.0
+matplotlib==3.11.2
+joblib>=1.3
+tabulate>=0.9
+kagglehub>=0.3
