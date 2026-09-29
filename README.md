@@ -60,7 +60,14 @@ Full numbers: [`reports/model_comparison.md`](reports/model_comparison.md) and
 
 **1. Explore.** All fraud occurs in `TRANSFER` and `CASH_OUT` transactions, which fits the fraud scenario
 the simulator models: take over an account, transfer the funds to a mule account, and cash out. The other
-three types are labelled legitimate by rule, so over half of the rows never reach the model.
+three types are labelled legitimate by rule, so over half of the rows never reach the model. Fraud is also
+concentrated in time: between 3:00 and 6:00, roughly 40–58% of transactions are fraud, against almost
+none during the day. Fraudulent amounts are larger, with a median of about 441k against 171k.
+
+<p align="center">
+  <img src="reports/figures/fraud_rate_by_type.png" width="48%" alt="Fraud rate by transaction type">
+  <img src="reports/figures/fraud_rate_by_hour.png" width="48%" alt="Fraud rate by hour of day">
+</p>
 
 **2. Engineer features.**
 
