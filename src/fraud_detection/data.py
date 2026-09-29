@@ -38,15 +38,20 @@ def find_data_file(path: str | Path | None = None, download: bool = True) -> Pat
         if candidate.is_file():
             return candidate
 
+    manual_steps = (
+        f"Download the dataset from https://www.kaggle.com/datasets/{KAGGLE_DATASET} and put the "
+        f"zip or CSV in {DATA_DIR}, or set KAGGLE_API_TOKEN (or KAGGLE_USERNAME and KAGGLE_KEY) "
+        "so it can be downloaded automatically."
+    )
     if not download:
-        raise FileNotFoundError(
-            f"Dataset not found. Download it from https://www.kaggle.com/datasets/{KAGGLE_DATASET} "
-            f"and place {RAW_FILENAME} in {DATA_DIR}."
-        )
+        raise FileNotFoundError(f"Dataset not found. {manual_steps}")
 
     import kagglehub
 
-    downloaded = Path(kagglehub.dataset_download(KAGGLE_DATASET))
+    try:
+        downloaded = Path(kagglehub.dataset_download(KAGGLE_DATASET))
+    except Exception as err:
+        raise RuntimeError(f"Could not download the dataset from Kaggle ({err}).\n{manual_steps}") from None
     return next(downloaded.rglob("*.csv"))
 
 
