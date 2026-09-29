@@ -47,10 +47,11 @@ def find_data_file(path: str | Path | None = None, download: bool = True) -> Pat
         raise FileNotFoundError(f"Dataset not found. {manual_steps}")
 
     import kagglehub
+    import requests
 
     try:
         downloaded = Path(kagglehub.dataset_download(KAGGLE_DATASET))
-    except Exception as err:
+    except requests.RequestException as err:
         raise RuntimeError(f"Could not download the dataset from Kaggle ({err}).\n{manual_steps}") from None
     return next(downloaded.rglob("*.csv"))
 

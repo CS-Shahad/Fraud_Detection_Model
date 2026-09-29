@@ -78,7 +78,7 @@ def amount_distribution(df: pd.DataFrame, path=None) -> plt.Figure:
     ax.set_title("Transaction amounts: fraud vs legitimate")
     ax.set_xlabel("Transaction amount (log10)")
     ax.set_ylabel("Density")
-    ax.set_xticks(range(0, 9), [f"$10^{i}$" for i in range(0, 9)])
+    ax.set_xticks(range(9), [f"$10^{i}$" for i in range(9)])
     ax.legend(loc="upper left")
     save(fig, path)
     return fig
