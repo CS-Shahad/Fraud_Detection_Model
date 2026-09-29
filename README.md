@@ -69,6 +69,9 @@ oversampling, which keeps the predicted probabilities meaningful.
 
 **In the browser:** click *Open in Colab* above and run all cells. The dataset downloads automatically.
 
+**In GitHub Codespaces:** *Code → Codespaces → Create codespace*. Dependencies install automatically, then
+run `python -m fraud_detection.train` in the terminal.
+
 **Locally:**
 
 ```bash

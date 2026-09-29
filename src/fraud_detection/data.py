@@ -9,15 +9,14 @@ from sklearn.model_selection import train_test_split
 
 from .config import DATA_DIR, KAGGLE_DATASET, RANDOM_STATE, RAW_FILENAME, TARGET, TEST_SIZE, VAL_SIZE
 
-# Compact dtypes cut memory use for the 6.3M-row file by roughly half.
+# Compact dtypes, and skipping the account-ID columns (unused as features), keep the
+# 6.3M-row file under 1 GB in memory.
 DTYPES = {
     "step": "int16",
     "type": "category",
     "amount": "float64",
-    "nameOrig": "string",
     "oldbalanceOrg": "float64",
     "newbalanceOrig": "float64",
-    "nameDest": "string",
     "oldbalanceDest": "float64",
     "newbalanceDest": "float64",
     "isFraud": "int8",
@@ -28,11 +27,13 @@ DTYPES = {
 def find_data_file(path: str | Path | None = None, download: bool = True) -> Path:
     """Return the path to the PaySim CSV.
 
-    Looks at ``path`` first, then ``data/``. If neither exists and ``download`` is
-    true, fetches the dataset from Kaggle with ``kagglehub``.
+    Looks at ``path`` first, then for a CSV (or the zip Kaggle serves) in ``data/``.
+    If none is found and ``download`` is true, fetches the dataset from Kaggle with
+    ``kagglehub``.
     """
-    candidates = [Path(path)] if path else []
-    candidates.append(DATA_DIR / RAW_FILENAME)
+    if path:
+        return Path(path)
+    candidates = [DATA_DIR / RAW_FILENAME, *sorted(DATA_DIR.glob("*.csv")), *sorted(DATA_DIR.glob("*.zip"))]
     for candidate in candidates:
         if candidate.is_file():
             return candidate
@@ -50,8 +51,8 @@ def find_data_file(path: str | Path | None = None, download: bool = True) -> Pat
 
 
 def load_transactions(path: str | Path) -> pd.DataFrame:
-    """Read the PaySim CSV with memory-friendly dtypes."""
-    return pd.read_csv(path, dtype=DTYPES)
+    """Read the PaySim CSV (plain or zipped) with memory-friendly dtypes."""
+    return pd.read_csv(path, usecols=list(DTYPES), dtype=DTYPES)
 
 
 def split_data(
