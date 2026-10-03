@@ -34,9 +34,9 @@ On a held-out test set of **554,082** TRANSFER and CASH_OUT transactions (1,643 
 
 - **XGBoost catches 99.5% of fraud with zero false alarms**, while the rule already in the data catches
   3 cases. It was selected on validation PR-AUC. Random Forest is effectively tied.
-- **Compared with the original version of this project**, where the best model (Random Forest) reached
-  98% precision and 80% recall, recall rose to 99.5% and false alarms fell to zero. The test splits differ,
-  so the comparison is indicative.
+- **Compared with the original version of this project**, re-run on the same test set: the original
+  Random Forest setup caught 79% of fraud with 33 false alarms; the final pipeline catches 99.8% with none.
+  See [why](#why-are-the-scores-so-high) below.
 - Logistic regression also catches over 99% of fraud, but at the cost of hundreds of false alarms.
 
 <p align="center">
@@ -44,9 +44,9 @@ On a held-out test set of **554,082** TRANSFER and CASH_OUT transactions (1,643 
   <img src="reports/figures/confusion_matrix.png" width="40%" alt="Confusion matrix of XGBoost on the test set">
 </p>
 
-**What the model relies on.** Mostly the transaction type and the sender's balance after the transaction,
-since fraud typically drains the sender's account to zero. The engineered balance-error features add
-little on top: a tree model can learn the same splits straight from the raw balances.
+**What the model relies on.** By gain importance, mostly the transaction type and the sender's balance
+after the transaction, since fraud typically drains the sender's account to zero. Gain importance
+understates the engineered features, though: removing them costs far more than this chart suggests (below).
 
 <p align="center">
   <img src="reports/figures/feature_importance.png" width="70%" alt="XGBoost feature importance">
@@ -55,6 +55,32 @@ little on top: a tree model can learn the same splits straight from the raw bala
 Full numbers: [`reports/model_comparison.md`](reports/model_comparison.md) and
 [`reports/metrics.json`](reports/metrics.json).
 <!-- /RESULTS -->
+
+## Why are the scores so high?
+
+Near-perfect scores are a reason for suspicion, so they were checked. An
+[ablation study](reports/ablation.md) (`python -m fraud_detection.ablation`) starts from the original
+notebook's setup and adds one change at a time, scoring every step on the same test set:
+
+| Step | Random Forest PR-AUC | XGBoost PR-AUC |
+|---|---:|---:|
+| 1. Original notebook setup | 0.942 | 0.949 |
+| 2. + threshold tuned on validation | 0.942 | 0.949 |
+| 3. + train only on TRANSFER / CASH_OUT | 0.933 | 0.955 |
+| 4. **+ engineered balance features** | **0.998** | **0.997** |
+| 5. + final hyperparameters | 0.998 | 0.999 |
+
+(The threshold changes precision and recall, not PR-AUC, which covers all thresholds; tuning it raised
+Random Forest's recall from 79% to 83%.)
+
+- **The engineered features are the main reason.** Features such as "the receiver's balance is zero before
+  and after receiving money", true for 50% of frauds but 0.06% of legitimate transfers, capture traces the
+  PaySim simulator leaves on fraud. Real transaction data would not separate this cleanly.
+- **No leakage was found.** No target column is among the features, the splits share no rows, and XGBoost
+  trained on shuffled labels scores a PR-AUC of 0.006, close to the 0.003 a random guess gets.
+- **LightGBM had a training problem.** With default settings it scored a PR-AUC of only 0.20 on the
+  original features: with 0.1% fraud, its first trees push scores to exactly 0 or 1 and training stalls.
+  Capping each tree's output (`max_delta_step=1`) brings it to 0.94, and to 0.998 with the final features.
 
 ## Approach
 
@@ -144,7 +170,7 @@ scorer.score(pd.read_csv("new_transactions.csv"))  # -> fraud_probability, is_fr
   lower.
 - **Timing.** The features use balances *after* the transaction, so the model detects fraud just after it
   happens rather than blocking it before authorisation.
-- **Next:** tune LightGBM, measure each engineered feature's contribution, validate on a time-based split, choose the threshold from a business cost model, add
+- **Next:** measure which engineered feature carries most of the gain, validate on a time-based split, choose the threshold from a business cost model, add
   per-account behaviour features, explain predictions with SHAP, and serve the scorer through an API.
 
 ## Dataset

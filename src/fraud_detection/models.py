@@ -48,6 +48,9 @@ def get_models(random_state: int = RANDOM_STATE) -> dict[str, ClassifierMixin]:
             subsample=0.8,
             subsample_freq=1,
             colsample_bytree=0.8,
+            # With ~0.1% fraud, LightGBM's first trees otherwise push scores to exactly
+            # 0 or 1 and training stalls; capping each tree's output keeps it learning.
+            max_delta_step=1,
             n_jobs=-1,
             random_state=random_state,
             verbose=-1,
