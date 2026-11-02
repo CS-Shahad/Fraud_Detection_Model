@@ -27,13 +27,14 @@ On a held-out test set of **554,082** TRANSFER and CASH_OUT transactions (1,643 
 | Model | PR-AUC | Precision | Recall | Fraud caught | Stolen money caught | False alarms |
 |---|---:|---:|---:|---:|---:|---:|
 | **XGBoost** (selected) | **0.998** | **100.0%** | 99.5% | 1,634 / 1,643 | 99.9% | **0** |
+| LightGBM | 0.998 | 99.9% | 99.7% | 1,638 / 1,643 | 99.9% | 2 |
 | Random Forest | 0.997 | 99.9% | 99.7% | 1,638 / 1,643 | 99.9% | 1 |
-| LightGBM | 0.924 | 94.5% | 97.8% | 1,606 / 1,643 | 98.6% | 93 |
 | Logistic Regression | 0.877 | 81.8% | 99.2% | 1,630 / 1,643 | 99.5% | 364 |
 | Existing rule (`isFlaggedFraud`) | 0.005 | 100.0% | 0.2% | 3 / 1,643 | 0.5% | 0 |
 
 - **XGBoost catches 99.5% of fraud with zero false alarms**, while the rule already in the data catches
-  3 cases. It was selected on validation PR-AUC. Random Forest is effectively tied.
+  3 cases. It was selected on validation PR-AUC; on the test set, LightGBM and Random Forest are
+  effectively tied with it.
 - **Compared with the original version of this project**, re-run on the same test set: the original
   Random Forest setup caught 79% of fraud with 33 false alarms; the final pipeline catches 99.8% with none.
   See [why](#why-are-the-scores-so-high) below.
@@ -81,6 +82,7 @@ Random Forest's recall from 79% to 83%.)
 - **LightGBM had a training problem.** With default settings it scored a PR-AUC of only 0.20 on the
   original features: with 0.1% fraud, its first trees push scores to exactly 0 or 1 and training stalls.
   Capping each tree's output (`max_delta_step=1`) brings it to 0.94, and to 0.998 with the final features.
+  The final LightGBM uses this setting (in the main results its PR-AUC went from 0.924 to 0.998).
 
 ## Approach
 
