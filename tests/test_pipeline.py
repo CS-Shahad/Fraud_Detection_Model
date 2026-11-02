@@ -47,3 +47,16 @@ def test_saved_model_scores_new_transactions(transactions, tmp_path, monkeypatch
     assert len(scores) == len(transactions)
     not_prone = ~transactions["type"].isin(["TRANSFER", "CASH_OUT"])
     assert (scores.loc[not_prone, "fraud_probability"] == 0).all()
+
+
+def test_ablation_scores_every_step_on_the_same_test_set(transactions):
+    from fraud_detection.ablation import leakage_checks, run
+
+    results = run(transactions, ["XGBoost"])
+    assert len(results) == 7
+    # Same test rows at every step, so the number of real frauds never changes.
+    assert (results["tp"] + results["fn"]).nunique() == 1
+
+    checks = leakage_checks(transactions)
+    assert "none" in checks[0]
+    assert checks[1].endswith(": 0")
